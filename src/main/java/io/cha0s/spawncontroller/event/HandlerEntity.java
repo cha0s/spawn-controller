@@ -30,8 +30,7 @@ public class HandlerEntity {
   }
   
   public static Map<Integer, MobCapCache> mobCapCache = new HashMap<Integer, MobCapCache>();
-  
-  public static List<Chunk> eligibleChunks = new ArrayList<Chunk>();
+  public static Map<Integer, List<Chunk>> eligibleChunksCache = new HashMap<Integer, List<Chunk>>();
   
   public static Map<String, Integer> entityCountsWithinEligibleSpawnChunks(List<Chunk> eligibleSpawnChunks) {
     Map<String, Integer> count = new HashMap<String, Integer>();
@@ -92,10 +91,12 @@ public class HandlerEntity {
   }
   
   public static List<Chunk> eligibleSpawnChunks(World world) {
-    if (0 == eligibleChunks.size()) {
-      eligibleChunks.addAll(eligibleSpawnChunksUncached(world));
+    int dimensionId = world.provider.getDimension();
+    if (!eligibleChunksCache.containsKey(dimensionId)) {
+      eligibleChunksCache.put(dimensionId, eligibleSpawnChunksUncached(world));
+      
     }
-    return eligibleChunks;
+    return eligibleChunksCache.get(dimensionId);
   }
   
   public static Map<String, Integer> entityCountsWithinWorldUncached(World world) {
@@ -150,7 +151,7 @@ public class HandlerEntity {
     // Only for the server.
     if(world.isRemote) return;
     
-    eligibleChunks.clear();
+    eligibleChunksCache.clear();
     mobCapCache.clear();
   }
   
@@ -177,7 +178,7 @@ public class HandlerEntity {
     if (SpawnControllerConfiguration.entityHasMobCap(entity)) {
        
       // Divide by 17x17 chunks.
-      double areas = eligibleChunks.size() / 289;
+      double areas = eligibleSpawnChunks(world).size() / 289;
       int mobcap = SpawnControllerConfiguration.mobCapForEntity(entity);
        
       if (mobCountForEntity(entity) >= (mobcap * areas)) {
