@@ -15,7 +15,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 
 import io.cha0s.spawncontroller.event.HandlerEntity;
-import io.cha0s.spawncontroller.event.HandlerEntity.MobCapCache;
 
 public class CommandStats extends CommandBase {
 
@@ -31,13 +30,13 @@ public class CommandStats extends CommandBase {
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		for (Map.Entry<Integer, MobCapCache> entry : HandlerEntity.mobCapCache.entrySet()) {
-			World world = DimensionManager.getWorld(entry.getKey());
-			sender.addChatMessage(new TextComponentString("Stats for dimension: " + entry.getKey()));
+		for (World world : DimensionManager.getWorlds()) {
+			sender.addChatMessage(new TextComponentString("Stats for dimension: " + world.provider.getDimension()));
 			sender.addChatMessage(new TextComponentString("  Eligible chunks: " + HandlerEntity.eligibleSpawnChunks(world).size()));
 			for (Map.Entry<String, Integer> countEntry : HandlerEntity.entityCountsWithinWorld(world).entrySet()) {
 				sender.addChatMessage(new TextComponentString("  " + countEntry.getKey() + ": " + countEntry.getValue()));
 			}
+			
 		}
 	}
 	
