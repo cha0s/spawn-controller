@@ -13,27 +13,27 @@ import net.minecraft.util.text.TextComponentString;
 
 public class CommandReload extends CommandBase {
 
-	@Override
-	public String getCommandName() {
-		return "spawncontrollerreload";
-	}
+  @Override
+  public String getCommandName() {
+    return "spawncontrollerreload";
+  }
 
-	@Override
-	public String getCommandUsage(ICommandSender sender) {
-		return "spawncontrollerreload";
-	}
+  @Override
+  public String getCommandUsage(ICommandSender sender) {
+    return "spawncontrollerreload";
+  }
 
-	@Override
-	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		SpawnController.reloadConfig();
-		sender.addChatMessage(new TextComponentString("SpawnController configuration reloaded!"));
-	}
-	
-	@Override
-	public List<String> getCommandAliases() {
-		return new ArrayList<String>(Arrays.asList(
-			"spawncontrollerreload",
-			"screload"
-		));
-	}
+  @Override
+  public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
+    SpawnController.reloadConfig();
+    sender.addChatMessage(new TextComponentString("SpawnController configuration reloaded!"));
+  }
+  
+  @Override
+  public List<String> getCommandAliases() {
+    return new ArrayList<String>(Arrays.asList(
+      "spawncontrollerreload",
+      "screload"
+    ));
+  }
 }

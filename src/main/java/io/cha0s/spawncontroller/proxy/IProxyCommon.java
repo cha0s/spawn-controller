@@ -4,8 +4,8 @@ import java.io.File;
 
 public interface IProxyCommon {
 
-	public void registerEventHandlers();
-	
-	public void loadConfig(File configFile);
-	
+  public void registerEventHandlers();
+  
+  public void loadConfig(File configFile);
+  
 }

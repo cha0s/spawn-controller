@@ -8,19 +8,19 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.MinecraftForge;
 
 public class ProxyCommon implements IProxyCommon {
-	
-	private HandlerEntity handlerEntity;
-	
-	public ProxyCommon() {
-		handlerEntity = new HandlerEntity();
-	}
-	
-	@Override
-	public void registerEventHandlers() {
-		MinecraftForge.EVENT_BUS.register(handlerEntity);
-	}
-	
-	public void loadConfig(File configFile) {
-		SpawnControllerConfiguration.fromForgeConfiguration(new Configuration(configFile));
-	}
+  
+  private HandlerEntity handlerEntity;
+  
+  public ProxyCommon() {
+    handlerEntity = new HandlerEntity();
+  }
+  
+  @Override
+  public void registerEventHandlers() {
+    MinecraftForge.EVENT_BUS.register(handlerEntity);
+  }
+  
+  public void loadConfig(File configFile) {
+    SpawnControllerConfiguration.fromForgeConfiguration(new Configuration(configFile));
+  }
 }
