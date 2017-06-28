@@ -1,158 +1,53 @@
 package io.cha0s.spawncontroller.event;
 
+import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraftforge.event.entity.EntityEvent;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent.CheckSpawn;
-import net.minecraft.entity.player.EntityPlayer;
 
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
+import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
+import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent;
 
 import io.cha0s.spawncontroller.config.SpawnControllerConfiguration;
+import io.cha0s.spawncontroller.config.SpawnControllerConfiguration.MobCapEntityClass;
+import io.cha0s.spawncontroller.util.MobStats;
 
 public class HandlerEntity {
   
-  public static class MobCapCache {
-    public Map<String, Integer> entityCounts = new HashMap<String, Integer>();
-  }
+  final int DENIAL_INTERVAL = 2 * 20;
+  int denialCaret = 1;
   
-  public static Map<Integer, MobCapCache> mobCapCache = new HashMap<Integer, MobCapCache>();
-  public static Map<Integer, List<Chunk>> eligibleChunksCache = new HashMap<Integer, List<Chunk>>();
+  public static Set<String> denialCache = new HashSet<String>();
+  public static Map<Integer, MobStats> statsCache = new HashMap<Integer, MobStats>();
   
-  public static Map<String, Integer> entityCountsWithinEligibleSpawnChunks(List<Chunk> eligibleSpawnChunks) {
-    Map<String, Integer> count = new HashMap<String, Integer>();
-    
-    List<EntityLivingBase> livingEntities = new ArrayList<EntityLivingBase>();
-    
-    for (Chunk chunk : eligibleSpawnChunks) {
-      
-      // Get all entities within bounding box.
-      int x = chunk.xPosition << 4;
-      int z = chunk.zPosition << 4;
-      
-      chunk.getEntitiesOfTypeWithinAAAB(
-        EntityLivingBase.class,
-        new AxisAlignedBB(x, 0, z, x + 15, 255, z + 15),
-        livingEntities,
-        null
-      );
-    }
-    
-    for (EntityLivingBase entity : livingEntities) {
-      if (entity instanceof EntityPlayer) continue;
-      
-      for (String key : SpawnControllerConfiguration.mobCapEntityClasses.keysForEntity(entity)) {
-        if (!count.containsKey(key)) count.put(key, 0);
-        count.put(key, count.get(key) + 1);
-      }
-    }
-    
-    return count;
-  }
-  
-  public static List<Chunk> eligibleSpawnChunksUncached(World world) {
-    Map<BlockPos, Chunk> uniqueChunks = new HashMap<BlockPos, Chunk>();
-    
-    for (EntityPlayerMP entity : world.getMinecraftServer().getPlayerList().getPlayerList()) {
-      if (entity.getEntityWorld() != world) continue;
-      
-      final BlockPos originalPosition = entity.getPosition();
-
-      // Eligible spawn chunks are 17x17 chunks centered on player. 
-      IntStream.range(-8, 9).forEach(cz -> {
-        IntStream.range(-8, 9).forEach(cx -> {
-          
-          final Chunk chunk = world.getChunkFromBlockCoords(originalPosition.add(
-            cx << 4, 0, cz << 4
-          ));
-          
-          uniqueChunks.put(
-            new BlockPos(chunk.xPosition, 0, chunk.zPosition),
-            chunk
-          );
-        });  
-      });  
-    }
-    
-    return new ArrayList<Chunk>(uniqueChunks.values());
-  }
-  
-  public static List<Chunk> eligibleSpawnChunks(World world) {
-    int dimensionId = world.provider.getDimension();
-    if (!eligibleChunksCache.containsKey(dimensionId)) {
-      eligibleChunksCache.put(dimensionId, eligibleSpawnChunksUncached(world));
-      
-    }
-    return eligibleChunksCache.get(dimensionId);
-  }
-  
-  public static Map<String, Integer> entityCountsWithinWorldUncached(World world) {
-    return entityCountsWithinEligibleSpawnChunks(eligibleSpawnChunks(world));
-  }
-  
-  public static Map<String, Integer> entityCountsWithinWorld(World world) {
-    int dimensionId = world.provider.getDimension();
-
-    if (!mobCapCache.containsKey(dimensionId)) {
-      mobCapCache.put(dimensionId, new MobCapCache());
-      mobCapCache.get(dimensionId).entityCounts = entityCountsWithinWorldUncached(world);
-    }
-    
-    return mobCapCache.get(dimensionId).entityCounts;
-  }
-  
-  public static int mobCountForEntity(Entity entity) {
-    int mobcount = 0;
-    for (String key : SpawnControllerConfiguration.mobCapEntityClasses.keysForEntity(entity)) {
-      Map<String, Integer> entityCounts = entityCountsWithinWorld(entity.getEntityWorld());
-      int keyCount = entityCounts.containsKey(key) ? entityCounts.get(key) : 0;
-      if (keyCount > mobcount) mobcount = keyCount;
-    }
-     
-    return mobcount;
-  }
-  
-  public void increaseEntityCount(World world, Entity entity, int increaseBy) {
-    int dimensionId = world.provider.getDimension();
-    MobCapCache mobCapCacheForEntity = mobCapCache.get(dimensionId);
-    for (String key : SpawnControllerConfiguration.mobCapEntityClasses.keysForEntity(entity)) {
-      Map<String, Integer> entityCounts = mobCapCacheForEntity.entityCounts;
-      if (!entityCounts.containsKey(key)) entityCounts.put(key, 0);
-      entityCounts.put(key, entityCounts.get(key) + increaseBy);
-    }
-  }
-  
-  public void denyEntitySpawn(CheckSpawn event) {
-    final Entity entity = event.getEntity();
-    final World world = event.getWorld();
-      
-    event.setResult(Result.DENY);
-    if (event.isCancelable()) event.setCanceled(true);
-    world.removeEntity(entity);
-  }
-
   @SubscribeEvent
-  public void onWorldTick(WorldTickEvent event) {
-    World world = event.world;
+  public void onServerTick(ServerTickEvent event) {
+    if (Phase.END != event.phase) return;
     
-    // Only for the server.
-    if(world.isRemote) return;
+    statsCache.clear();
+
+    if (--denialCaret > 0) return;
+    denialCaret = DENIAL_INTERVAL;
     
-    eligibleChunksCache.clear();
-    mobCapCache.clear();
+    denialCache.clear();
+  }
+  
+  MobStats statsForWorld(World world) {
+    int dimensionId = world.provider.getDimension();
+    if (!statsCache.containsKey(dimensionId)) {
+      statsCache.put(dimensionId, MobStats.forWorld(world));
+    }
+    return statsCache.get(dimensionId);
   }
   
   @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -166,26 +61,80 @@ public class HandlerEntity {
     // Don't touch forced entities.
     if (entity.forceSpawn) return;
     
-    // Should we throttle this entity? Roll the dice...
-    int probability = (int) Math.floor(Math.random() * 100);
-    if (SpawnControllerConfiguration.probabilityToThrottleEntity(entity) > probability) {
-      // Throttled.
+    // TorchMaster tag? TODO shouldn't be lazy...
+    if (entity.getTags().contains("IsSpawnerMob")) return;
+    
+    // Add a tag so we can see that we've checked this entity.
+    entity.addTag("SpawnControl");
+    
+    // Early out spawn check.
+    List<String> entityKeys = SpawnControllerConfiguration.mobCapEntityClasses.keysForEntity(entity);
+    for (String key : entityKeys) if (denialCache.contains(key)) {
       denyEntitySpawn(event);
       return;
     }
-       
+  }
+
+  @SubscribeEvent
+  public void onEntityJoinWorld(EntityJoinWorldEvent event) {
+    Entity entity = event.getEntity();
+    World world = event.getWorld();
+    
+    // Only for the server.
+    if(world.isRemote) return;
+    
+    // Only operate on entities that were just SpawnCheck'd.
+    if (!entity.getTags().contains("SpawnControl")) return;
+    entity.removeTag("SpawnControl");
+
+    // Should we throttle this entity? Roll the dice...
+    int probability = (int) Math.floor(Math.random() * 100);
+    if (SpawnControllerConfiguration.highestProbabilityToThrottleEntity(entity) > probability) {
+      denyEntitySpawn(event);
+      return;
+    }
+
     // Check mob cap?
     if (SpawnControllerConfiguration.entityHasMobCap(entity)) {
+      MobStats stats = statsForWorld(world);
        
       // Divide by 17x17 chunks.
-      double areas = eligibleSpawnChunks(world).size() / 289;
-      int mobcap = SpawnControllerConfiguration.mobCapForEntity(entity);
-       
-      if (mobCountForEntity(entity) >= (mobcap * areas)) {
-        // Nooope.
+      double areas = stats.eligibleChunkCount / (17 * 17);
+      
+      boolean isUnderCap = true;
+      
+      List<String> entityKeys = SpawnControllerConfiguration.mobCapEntityClasses.keysForEntity(entity);
+      for (String key : entityKeys) {
+        if (!stats.mobCounts.containsKey(key)) continue;
+        
+        MobCapEntityClass mcec = SpawnControllerConfiguration.mobCapEntityClasses.get(key);
+        if (null == mcec) continue;
+        
+        if (stats.mobCounts.get(key) >= mcec.cap * areas) {
+          isUnderCap = false;
+          denialCache.add(key);
+          break;
+        }
+      }
+      
+      if (!isUnderCap) {
         denyEntitySpawn(event);
         return;
       }
+
+      stats.incrementCountsForEntity(entity);        
     }
-  }    
+  }
+
+  public void denyEntitySpawn(EntityEvent event) {
+    final Entity entity = event.getEntity();
+    final World world = entity.getEntityWorld();
+    
+    // Cleanup event.
+    event.setResult(Result.DENY);
+    if (event.isCancelable()) event.setCanceled(true);
+    
+    // Cleanup world.
+    world.removeEntity(entity);
+  }
 }

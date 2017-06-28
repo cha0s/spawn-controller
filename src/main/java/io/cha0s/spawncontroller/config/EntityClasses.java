@@ -12,7 +12,7 @@ import net.minecraftforge.common.config.Property;
 
 abstract public class EntityClasses<T> {
   
-  public Map<String, T> specs = new HashMap<String, T>();
+  private Map<String, T> specs = new HashMap<String, T>();
   
   private void clearCache() {
     specs.clear();
@@ -66,5 +66,6 @@ abstract public class EntityClasses<T> {
     return specs.get(keys.get(0));
   }
   
+  public T get(String key) { return specs.get(key); }
   public void put(String key, T value) { specs.put(key, value); }
 }

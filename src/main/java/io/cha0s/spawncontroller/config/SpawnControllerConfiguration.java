@@ -22,33 +22,30 @@ public class SpawnControllerConfiguration {
   }
   public static ThrottleEntityClasses throttleEntityClasses = new ThrottleEntityClasses();
   
-  public static int probabilityToThrottleEntity(Entity eventEntity) {
-    ThrottleEntityClass tec = throttleEntityClasses.lookupForEntity(eventEntity);
-    return tec == null ? 0 : tec.probability;
+  public static int highestProbabilityToThrottleEntity(Entity entity) {
+    int maxProbability = Integer.MIN_VALUE;
+    for (String key : throttleEntityClasses.keysForEntity(entity)) {
+      ThrottleEntityClass tec = throttleEntityClasses.get(key);
+      int probability = tec == null ? 0 : tec.probability;
+      if (probability > maxProbability) maxProbability = probability; 
+    }
+    return maxProbability;
   }
 
   public static class MobCapEntityClass {
-    public String originalKey = "";
     public int cap = 0;
   }
   public static class MobCapEntityClasses extends EntityClasses<MobCapEntityClass> {
     protected MobCapEntityClass fromProperty(Property property, String key) {
       MobCapEntityClass mcec = new MobCapEntityClass();
       mcec.cap = property.getInt();
-      mcec.originalKey = key;
       return mcec;
     }
   }  
   public static MobCapEntityClasses mobCapEntityClasses = new MobCapEntityClasses();
 
-  public static boolean entityHasMobCap(Entity eventEntity) {
-    MobCapEntityClass mcec = mobCapEntityClasses.lookupForEntity(eventEntity);
-    return mcec != null;
-  }
-
-  public static int mobCapForEntity(Entity eventEntity) {
-    MobCapEntityClass mcec = mobCapEntityClasses.lookupForEntity(eventEntity);
-    return mcec == null ? 0 : mcec.cap;
+  public static boolean entityHasMobCap(Entity entity) {
+    return mobCapEntityClasses.keysForEntity(entity).size() > 0;
   }
 
   public static Configuration forgeConfiguration;
