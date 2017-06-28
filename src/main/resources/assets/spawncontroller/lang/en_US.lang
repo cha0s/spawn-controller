@@ -1,0 +1,5 @@
+
+config.sc:spawncontrol.Hostile=Hostile mobs (Skeletons, Zombies, etc.)
+config.sc:spawncontrol.Animal=Animal mobs (Pigs, Sheep, etc.)
+config.sc:spawncontrol.Ambient=Ambient mobs (Bats, ..?)
+config.sc:spawncontrol.Water=Water mobs (Squids, ..?)

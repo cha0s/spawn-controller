@@ -1,18 +1,13 @@
 package io.cha0s.spawncontroller;
 
-import java.io.File;
+import net.minecraft.entity.EnumCreatureType;
 
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.ProgressManager;
-import net.minecraftforge.fml.common.ProgressManager.ProgressBar;
-import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
-import io.cha0s.spawncontroller.command.CommandReload;
-import io.cha0s.spawncontroller.command.CommandStats;
+import io.cha0s.spawncontroller.config.Configuration;
 
 @Mod(
   modid = SpawnController.MODID,
@@ -27,36 +22,11 @@ public class SpawnController {
   @Instance
   private static SpawnController instance;
 
-  @SidedProxy(
-    clientSide="io.cha0s.spawncontroller.proxy.ProxyClient",
-    serverSide="io.cha0s.spawncontroller.proxy.ProxyServer"
-  )
-  private static io.cha0s.spawncontroller.proxy.IProxyCommon proxy;
-  
-  private static File suggestedConfigurationFile;
-  
-  public static void reloadConfig() {
-    proxy.loadConfig(suggestedConfigurationFile);
-  }
-
   @EventHandler
   public static void onPreInit(final FMLPreInitializationEvent event) {
-    final ProgressBar bar = ProgressManager.push("SpawnController PreInitialization", 2, true);
-
-    bar.step("Registering event handlers");
-    proxy.registerEventHandlers();
-    
-    // Loading config.
-    bar.step("Loading config");
-    suggestedConfigurationFile = event.getSuggestedConfigurationFile();
-    reloadConfig();
-
-    ProgressManager.pop(bar);
+    EnumCreatureType.MONSTER.maxNumberOfCreature = Configuration.Hostile;
+    EnumCreatureType.CREATURE.maxNumberOfCreature = Configuration.Animal;
+    EnumCreatureType.AMBIENT.maxNumberOfCreature = Configuration.Ambient;
+    EnumCreatureType.WATER_CREATURE.maxNumberOfCreature = Configuration.Water;
   }
-
-  @EventHandler
-  public void serverLoad(FMLServerStartingEvent event) {
-    event.registerServerCommand(new CommandReload());
-    event.registerServerCommand(new CommandStats());
-  }  
 }
