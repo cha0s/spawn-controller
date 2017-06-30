@@ -1,10 +1,10 @@
 # Spawn Controller
 
-This mod is controlling spawns on my server. It's not very polished yet.
+This mod controls mob spawning.
 
 # TODO
 
-- Add stats back in.
+- Elastic cap: more people on server, more spawns!
 
 ---
 

@@ -7,6 +7,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
 import io.cha0s.spawncontroller.command.CommandReload;
+import io.cha0s.spawncontroller.command.CommandStats;
 import io.cha0s.spawncontroller.config.Configuration;
 
 @Mod(modid = SpawnController.MODID, version = SpawnController.VERSION, acceptableRemoteVersions = SpawnController.ACCEPTABLEREMOTEVERSIONS)
@@ -27,5 +28,6 @@ public class SpawnController {
   @EventHandler
   public void serverLoad(FMLServerStartingEvent event) {
     event.registerServerCommand(new CommandReload());
+    event.registerServerCommand(new CommandStats());
   }
 }
